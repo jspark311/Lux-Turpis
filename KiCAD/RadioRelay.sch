@@ -1,0 +1,263 @@
+EESchema Schematic File Version 4
+EELAYER 26 0
+EELAYER END
+$Descr B 17000 11000
+encoding utf-8
+Sheet 1 1
+Title "WROOM32 Compute PCB"
+Date "2018-12-29"
+Rev "2"
+Comp "Manuvr, Inc"
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L Connector:Conn_01x01_Male P1
+U 1 1 61E45330
+P 3200 5150
+F 0 "P1" H 3200 5250 50  0000 C CNN
+F 1 "CONN_01X01" V 3300 5150 50  0001 C CNN
+F 2 "r2Parts:ManuvrLogo" H 3400 5050 50  0000 C CNN
+F 3 "" H 3200 5150 50  0000 C CNN
+	1    3200 5150
+	-1   0    0    1   
+$EndComp
+$Comp
+L power:GND #PWR01
+U 1 1 59110AC7
+P 2950 5250
+F 0 "#PWR01" H 2950 5000 50  0001 C CNN
+F 1 "GND" H 2950 5100 50  0000 C CNN
+F 2 "" H 2950 5250 50  0000 C CNN
+F 3 "" H 2950 5250 50  0000 C CNN
+	1    2950 5250
+	1    0    0    -1  
+$EndComp
+Text Label 2800 5150 2    39   ~ 0
+GND
+Wire Wire Line
+	2950 5150 3000 5150
+Wire Wire Line
+	2950 5250 2950 5150
+Wire Wire Line
+	2800 5150 2950 5150
+Connection ~ 2950 5150
+$Comp
+L IansParts:CAPARRAY_4 CARY1
+U 1 1 623655CA
+P 1850 4950
+F 0 "CARY1" H 1850 4350 60  0000 C CNN
+F 1 "100nF" H 1850 5500 39  0000 C CNN
+F 2 "r2Parts:CapArray_CKCL44" H 1850 4950 60  0001 C CNN
+F 3 "" H 1850 4950 60  0000 C CNN
+F 4 "CKCL44X5R0J104M085AA" H 1850 4950 60  0001 C CNN "Manu_Number"
+F 5 "TDK Corporation" H 1850 4950 60  0001 C CNN "Manu_Name"
+F 6 "445-1838-1-ND" H 1850 4950 60  0001 C CNN "Digikey_Number"
+	1    1850 4950
+	0    -1   1    0   
+$EndComp
+Text Label 2350 5250 0    39   ~ 0
+GND
+Connection ~ 2000 4650
+Wire Wire Line
+	1500 4650 1750 4650
+Connection ~ 1750 4650
+Wire Wire Line
+	1750 4650 1750 4700
+Wire Wire Line
+	2000 4650 2000 4700
+Wire Wire Line
+	2250 4650 2250 4700
+Wire Wire Line
+	1500 4700 1500 4650
+Wire Wire Line
+	2250 5250 2250 5200
+Connection ~ 2000 5250
+Wire Wire Line
+	2000 5250 2000 5200
+Connection ~ 1750 5250
+Wire Wire Line
+	1750 5200 1750 5250
+Wire Wire Line
+	1500 5250 1500 5200
+Wire Wire Line
+	1500 5250 1750 5250
+Wire Wire Line
+	2000 4650 2250 4650
+Wire Wire Line
+	1750 4650 2000 4650
+Wire Wire Line
+	2000 5250 2250 5250
+Wire Wire Line
+	1750 5250 2000 5250
+$Comp
+L Device:C C1
+U 1 1 6595B5D6
+P 1950 4250
+F 0 "C1" H 1950 4350 40  0000 L CNN
+F 1 "10uF" H 1956 4165 40  0000 L CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 1988 4100 30  0001 C CNN
+F 3 "~" H 1950 4250 60  0000 C CNN
+F 4 "CL10A106MA8NRNC" V -2450 1600 60  0001 C CNN "Manu_Number"
+F 5 "TDK Corporation" V -2450 1600 60  0001 C CNN "Manu_Name"
+F 6 "1276-1869-1-ND" V -950 1450 60  0001 C CNN "Digikey_Number"
+	1    1950 4250
+	0    1    1    0   
+$EndComp
+Text Label 2350 4650 0    39   ~ 0
+3v3
+Wire Wire Line
+	2350 4650 2250 4650
+Connection ~ 2250 4650
+Wire Wire Line
+	2350 5250 2250 5250
+Connection ~ 2250 5250
+$Comp
+L HeepBrain-parts:LORA1276 U1
+U 1 1 66596FAA
+P 2000 3600
+F 0 "U1" H 1975 3941 39  0000 C CNN
+F 1 "LORA1276" H 1975 3866 39  0000 C CNN
+F 2 "RadioRelay:LORA1276-Module" H 2000 3600 39  0001 C CNN
+F 3 "" H 2000 3600 39  0001 C CNN
+	1    2000 3600
+	1    0    0    -1  
+$EndComp
+Text Label 2400 4250 0    39   ~ 0
+GND
+Text Label 1450 3450 2    39   ~ 0
+SPI1_CLK
+Text Label 1450 3550 2    39   ~ 0
+SPI1_MISO
+Text Label 1450 3650 2    39   ~ 0
+SPI1_MOSI
+Text Label 1450 3750 2    39   ~ 0
+LORA_CS
+Wire Wire Line
+	1450 3450 1500 3450
+Wire Wire Line
+	1450 3550 1500 3550
+Wire Wire Line
+	1450 3650 1500 3650
+Wire Wire Line
+	1450 3750 1500 3750
+Wire Wire Line
+	1450 3850 1500 3850
+Text Label 1450 3850 2    39   ~ 0
+~LORA_RESET
+Wire Wire Line
+	1700 4150 1700 4250
+Wire Wire Line
+	1700 4250 1800 4250
+Text Label 1600 4250 2    39   ~ 0
+3v3
+Wire Wire Line
+	1600 4250 1700 4250
+Connection ~ 1700 4250
+$Comp
+L Connector:Conn_Coaxial J1
+U 1 1 66AF3E33
+P 2700 3800
+F 0 "J1" H 2799 3776 50  0000 L CNN
+F 1 "Conn_Coaxial" H 2799 3685 50  0000 L CNN
+F 2 "Connector_Coaxial:U.FL_Molex_MCRF_73412-0110_Vertical" H 2700 3800 50  0001 C CNN
+F 3 " ~" H 2700 3800 50  0001 C CNN
+F 4 "WM5587CT-ND" H 2700 3800 50  0001 C CNN "Digikey_Num"
+	1    2700 3800
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2450 3800 2500 3800
+Wire Wire Line
+	2150 4150 2150 4250
+Wire Wire Line
+	2100 4250 2150 4250
+Connection ~ 2150 4250
+Wire Wire Line
+	2150 4250 2250 4250
+Wire Wire Line
+	2700 4000 2700 4250
+Wire Wire Line
+	2250 4150 2250 4250
+Connection ~ 2250 4250
+Wire Wire Line
+	2250 4250 2700 4250
+Text Label 4550 2400 2    39   ~ 0
+3v3
+Text Label 4550 4300 2    39   ~ 0
+5v
+Text Label 3950 3400 2    39   ~ 0
+SPI1_CLK
+Text Label 3950 4100 2    39   ~ 0
+SPI1_MISO
+Text Label 3950 3600 2    39   ~ 0
+SPI1_MOSI
+Text Label 3950 3500 2    39   ~ 0
+LORA_CS
+Text Label 3950 3700 2    39   ~ 0
+~LORA_RESET
+Text Label 2450 3650 0    39   ~ 0
+LORA_DIO0
+Text Label 2450 3550 0    39   ~ 0
+LORA_DIO1
+Text Label 2450 3450 0    39   ~ 0
+LORA_DIO2
+Text Label 3950 4000 2    39   ~ 0
+LORA_DIO0
+Text Label 3950 3900 2    39   ~ 0
+LORA_DIO1
+Text Label 3950 3800 2    39   ~ 0
+LORA_DIO2
+Text Label 4550 2500 2    39   ~ 0
+GND
+$Comp
+L Connector_Generic:Conn_01x20 CON1
+U 1 1 5D59756B
+P 4750 3300
+F 0 "CON1" H 4830 3292 50  0000 L CNN
+F 1 "Conn_01x20" H 4830 3201 50  0000 L CNN
+F 2 "" H 4750 3300 50  0001 C CNN
+F 3 "~" H 4750 3300 50  0001 C CNN
+	1    4750 3300
+	1    0    0    -1  
+$EndComp
+Text Label 4550 4200 2    39   ~ 0
+GND
+NoConn ~ 4550 2600
+NoConn ~ 4550 2800
+NoConn ~ 4550 2900
+NoConn ~ 4550 3000
+NoConn ~ 4550 3100
+NoConn ~ 4550 3200
+NoConn ~ 4550 3300
+NoConn ~ 4550 2700
+Wire Wire Line
+	4450 3400 4550 3400
+Wire Wire Line
+	4450 3500 4550 3500
+Wire Wire Line
+	4450 3600 4550 3600
+Wire Wire Line
+	4450 3700 4550 3700
+Wire Wire Line
+	4450 3800 4550 3800
+Wire Wire Line
+	4450 3900 4550 3900
+Wire Wire Line
+	4450 4000 4550 4000
+Wire Wire Line
+	4450 4100 4550 4100
+$Comp
+L Connector_Generic:Conn_02x08_Odd_Even J2
+U 1 1 5D607132
+P 4150 3700
+F 0 "J2" H 4200 4217 50  0000 C CNN
+F 1 "Conn_02x08_Odd_Even" H 4200 4126 50  0000 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_2x08_P2.54mm_Vertical" H 4150 3700 50  0001 C CNN
+F 3 "~" H 4150 3700 50  0001 C CNN
+	1    4150 3700
+	1    0    0    -1  
+$EndComp
+$EndSCHEMATC

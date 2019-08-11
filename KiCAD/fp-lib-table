@@ -1,0 +1,3 @@
+(fp_lib_table
+  (lib (name RadioRelay)(type KiCad)(uri /home/ian/working-copies/RadioRelay)(options "")(descr ""))
+)
