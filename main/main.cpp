@@ -7,10 +7,13 @@
 #include <XenoSession/Console/ManuvrConsole.h>
 #include <Transports/ManuvrSocket/ManuvrTCP.h>
 
-
 #include <Transports/BufferPipes/ManuvrGPS/ManuvrGPS.h>
 #include <Drivers/Modems/LORA/SX1276/SX1276.h>
+#include <Drivers/SX1503/SX1503.h>
 #include <Drivers/Sensors/TMP102/TMP102.h>
+
+#include "NullamLucet.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,7 +28,7 @@ IO02              // Pigtail soldered to SD socket
 IO04              // Pigtail soldered to SD socket
 IO05
 IO12              // Pigtail soldered to SD socket
-IO13  <Non-boot>  // Pigtail soldered to SD socket
+IO13  SX1503_IRQ <Non-boot>  // Pigtail soldered to SD socket
 IO14  SDA  <Non-boot>  // Pigtail soldered to SD socket
 IO15  SCL              // Pigtail soldered to SD socket
 IO16  SPI1_CLK
@@ -150,6 +153,9 @@ ManuvrUARTOpts uart1_opts {
   .rts_pin       = 255,
   .cts_pin       = 255,
   .port          = 1
+};
+
+NullamLucetOpts relay_opts {
 };
 
 ManuvrUART uart1(&uart1_opts);
@@ -371,9 +377,15 @@ void manuvr_task(void* pvParameter) {
   SPIAdapter spi_bus = SPIAdapter(&spi_opts);
 
   tmp102 = new TMP102(0x49);
-  i2c.addSlaveDevice((I2CDevice*) tmp102);
 
   SX1276 lora(&sx1276_opts);
+  SX1503 sx1503(13, 255);
+
+  i2c.addSlaveDevice((I2CDevice*) tmp102);
+  i2c.addSlaveDevice((I2CDevice*) &sx1503);
+
+  NullamLucet nl(&relay_opts);
+
 
   esp_mqtt_client_config_t mqtt_cfg;
   memset((void*) &mqtt_cfg, 0, sizeof(mqtt_cfg));

@@ -14,15 +14,17 @@
 */
 class NullamLucetOpts {
   public:
+    NullamLucetOpts() {};
+    NullamLucetOpts(const NullamLucetOpts* o) {};
 
   private:
 };
 
 
 
-class NullamLucet : public EventReceiver,
+class NullamLucet : public EventReceiver
   #ifdef MANUVR_CONSOLE_SUPPORT
-    public ConsoleInterface,
+    , public ConsoleInterface
   #endif
     {
   public:
