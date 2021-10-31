@@ -1,17 +1,17 @@
 #include <math.h>
 
-#include <Platform/Platform.h>
-#include <Platform/Peripherals/I2C/I2CAdapter.h>
-#include <Platform/Peripherals/SPI/SPIAdapter.h>
-#include <Platform/Peripherals/UART/UART.h>
-#include <XenoSession/Console/ManuvrConsole.h>
-#include <Transports/ManuvrSocket/ManuvrTCP.h>
+/* ManuvrDrivers */
+#include <ManuvrDrivers.h>
 
-#include <Transports/BufferPipes/ManuvrGPS/ManuvrGPS.h>
-#include <Drivers/Modems/LORA/SX1276/SX1276.h>
-#include <Drivers/SX1503/SX1503.h>
-#include <Drivers/Sensors/TMP102/TMP102.h>
+/* CppPotpourri */
+#include <ESP32.h>
+#include <UARTAdapter.h>
+#include <ParsingConsole.h>
+#include <I2CAdapter.h>
+#include <SPIAdapter.h>
+#include <GPSWrapper.h>
 
+/* Local includes */
 #include "NullamLucet.h"
 
 
@@ -56,17 +56,16 @@ IO39  SPI1_MISO
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
-#include "rom/ets_sys.h"
-#include "rom/gpio.h"
+#include "esp32/rom/ets_sys.h"
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/gpio_reg.h"
 #include "soc/gpio_sig_map.h"
 #include "driver/gpio.h"
+#include "driver/spi_master.h"
 
 #include "esp_system.h"
-#include "esp_event_loop.h"
 #include "esp_log.h"
 #include "esp_attr.h"
 #include "esp_sleep.h"
@@ -77,10 +76,11 @@ IO39  SPI1_MISO
 #include "esp_event.h"
 #include "esp_eth.h"
 
-#include "esp_ota_ops.h"
-#include "esp_flash_partitions.h"
+//#include "esp_ota_ops.h"
+//#include "esp_flash_partitions.h"
 #include "esp_partition.h"
 #include "esp_http_client.h"
+#include "mqtt_client.h"
 
 #include "lwip/err.h"
 #include "lwip/sockets.h"
@@ -88,14 +88,26 @@ IO39  SPI1_MISO
 #include "lwip/netdb.h"
 #include "lwip/sys.h"
 
-#include "mqtt_client.h"
 
-#include "eth_phy/phy_lan8720.h"
-
-#define DEFAULT_ETHERNET_PHY_CONFIG phy_lan8720_default_ethernet_config
+#define CONFIG_PHY_ADDRESS         0
+#define CONFIG_PHY_SMI_MDC_PIN    23
+#define CONFIG_PHY_SMI_MDIO_PIN   18
 
 #define PIN_SMI_MDC   CONFIG_PHY_SMI_MDC_PIN
 #define PIN_SMI_MDIO  CONFIG_PHY_SMI_MDIO_PIN
+
+/* Platform pins */
+#define SDA_PIN             14  // IO14
+#define SCL_PIN             15  // IO15
+#define SPI_CLK_PIN         16  // IO16
+#define LORA_CS_PIN         17  // IO17
+#define SPI_MOSI_PIN        32  // IO32
+#define LORA_RESET_PIN      33  // IO33
+#define LORA_DIO2_PIN       34  // IO34
+#define LORA_DIO1_PIN       35  // IO35
+#define LORA_DIO0_PIN       36  // IO36
+#define SPI_MISO_PIN        39  // IO39
+
 
 
 /* OTA parameters that probably ought to be imparted at provisioning. */
@@ -104,16 +116,14 @@ IO39  SPI1_MISO
 //extern const uint8_t server_cert_pem_end[] asm("_binary_ca_cert_pem_end");
 
 
-static const char* TAG          = "main-cpp";
 TMP102* tmp102                  = nullptr;
-ManuvrMsg* sensor_post_timer    = nullptr;
 esp_mqtt_client_handle_t client = nullptr;
 
 static bool connected_have_ip   = false;
 static bool connected_mqtt      = false;
 
 
-const I2CAdapterOptions i2c_opts(
+const I2CAdapterOptions i2c0_opts(
   0,   // Device number
   14,  // (sda)
   15,  // (scl)
@@ -122,24 +132,16 @@ const I2CAdapterOptions i2c_opts(
 );
 
 const SX1276Opts sx1276_opts(
-  33,  // Reset
-  17,  // CS
-  36,  // D0
-  35,  // D1
-  34,  // D2
+  LORA_RESET_PIN,  // Reset
+  LORA_CS_PIN,     // CS
+  LORA_DIO0_PIN,   // D0
+  LORA_DIO1_PIN,   // D1
+  LORA_DIO2_PIN,   // D2
   LORABand::BAND_915
 );
 
-const SPIAdapterOpts spi_opts {
-  1,   // Peripheral index in hardware.
-  16,  // CLK
-  32,  // MOSI
-  39   // MISO
-};
 
-ManuvrUARTOpts uart1_opts {
-  .rx_buf_len    = 256,
-  .tx_buf_len    = 256,
+UARTOpts uart1_opts {
   .bitrate       = 9600,
   .start_bits    = 0,
   .bit_per_word  = 8,
@@ -148,17 +150,21 @@ ManuvrUARTOpts uart1_opts {
   .flow_control  = UARTFlowControl::NONE,
   .xoff_char     = 0,
   .xon_char      = 0,
-  .rx_pin        = 13,
-  .tx_pin        = 12,
-  .rts_pin       = 255,
-  .cts_pin       = 255,
-  .port          = 1
+  .padding       = 0
 };
 
-NullamLucetOpts relay_opts {
-};
 
-ManuvrUART uart1(&uart1_opts);
+static const char* TAG          = "main-cpp";
+ParsingConsole console(128);
+ESP32StdIO console_uart;
+UARTAdapter gps_uart(1, 13, 12, 255, 255, 256, 256);
+SPIAdapter spi_bus(1, SPI_CLK_PIN, SPI_MOSI_PIN, SPI_MISO_PIN, 8);
+I2CAdapter i2c0(&i2c0_opts);
+GPSWrapper gps;
+
+NullamLucetOpts relay_opts {};
+
+esp_eth_phy_t* phy = nullptr;
 
 
 static void eth_gpio_config_rmii() {
@@ -342,23 +348,20 @@ static int mqtt_event_handler(esp_mqtt_event_t* event) {
 }
 
 
-ManuvrGPS* gpsptr = nullptr;
-
-
 void mqtt_send_temperature() {
   //StringBuilder _log;
   //gpsptr->printDebug(&_log);
   if (connected_mqtt && (nullptr != tmp102)) {
     StringBuilder dat;
     //tmp102->issue_value_map(TCode::CBOR, &dat);
-    SensorError err = tmp102->readAsString(0, &dat);
-    if (SensorError::NO_ERROR == err) {
-      printf("temperature (%s).\n", (const char*) dat.string());
-      int msg_id = esp_mqtt_client_publish(client, "/theta/radio-relay/temperature", (const char*) dat.string(), dat.length(), 0, 0);
-    }
-    else {
-      printf("Failed to get temperature (%s).\n", SensorWrapper::errorString(err));
-    }
+    // SensorError err = tmp102->readAsString(0, &dat);
+    // if (SensorError::NO_ERROR == err) {
+    //   printf("temperature (%s).\n", (const char*) dat.string());
+    //   int msg_id = esp_mqtt_client_publish(client, "/theta/radio-relay/temperature", (const char*) dat.string(), dat.length(), 0, 0);
+    // }
+    // else {
+    //   printf("Failed to get temperature (%s).\n", SensorWrapper::errorString(err));
+    // }
   }
   //Kernel::log(&_log);
 }
@@ -366,26 +369,11 @@ void mqtt_send_temperature() {
 
 
 void manuvr_task(void* pvParameter) {
-  Kernel* kernel = platform.kernel();
-  unsigned long ms_0 = millis();
-  unsigned long ms_1 = ms_0;
-  bool odd_even = false;
-
-  I2CAdapter i2c(&i2c_opts);
-  kernel->subscribe(&i2c);
-
-  SPIAdapter spi_bus = SPIAdapter(&spi_opts);
-
-  tmp102 = new TMP102(0x49);
-
   SX1276 lora(&sx1276_opts);
   SX1503 sx1503(13, 255);
-
-  i2c.addSlaveDevice((I2CDevice*) tmp102);
-  i2c.addSlaveDevice((I2CDevice*) &sx1503);
-
   NullamLucet nl(&relay_opts);
 
+  tmp102 = new TMP102(0x49);
 
   esp_mqtt_client_config_t mqtt_cfg;
   memset((void*) &mqtt_cfg, 0, sizeof(mqtt_cfg));
@@ -397,28 +385,34 @@ void manuvr_task(void* pvParameter) {
   client = esp_mqtt_client_init(&mqtt_cfg);
   esp_mqtt_client_start(client);
 
-  ManuvrGPS gps((BufferPipe*) &uart1);
-
-  gpsptr = &gps;
-
-  #if defined(CONFIG_MANUVR_SENSOR_MGR)
-    platform.sensorManager()->addSensor(tmp102);
-    platform.sensorManager()->addSensor(&gps);
-  #endif
-
-
-  sensor_post_timer = kernel->createSchedule(5000, -1, false, mqtt_send_temperature);
-  sensor_post_timer->incRefs();
-  sensor_post_timer->enableSchedule(true);
 
   while (1) {
-    kernel->procIdleFlags();
-    ms_1 = millis();
-    kernel->advanceScheduler(ms_1 - ms_0);
-    ms_0 = ms_1;
-    odd_even = !odd_even;
-    if (0 == kernel->procIdleFlags()) {
-      vTaskDelay(10 / portTICK_PERIOD_MS);
+    bool should_sleep = true;
+    while (0 < spi_bus.poll()) {
+      should_sleep = false;
+    }
+    while (0 < spi_bus.service_callback_queue()) {
+      should_sleep = false;
+    }
+    while (0 < i2c0.poll()) {
+      should_sleep = false;
+    }
+
+    gps_uart.poll();
+    //nl.poll();
+    //nl.fetchLog(&_log);
+
+    if (0 < _log.length()) {
+      // Drain any accumulated log into the console output.
+      console_uart.provideBuffer(&_log);
+      should_sleep = false;
+    }
+    if (0 < console_uart.poll()) {
+      should_sleep = false;
+    }
+
+    if (should_sleep) {
+      vTaskDelay(1);
     }
   }
 }
@@ -559,6 +553,27 @@ void manuvr_task(void* pvParameter) {
 // }
 
 
+/*******************************************************************************
+* Console callbacks
+*******************************************************************************/
+
+int callback_help(StringBuilder* text_return, StringBuilder* args) {
+  if (0 < args->count()) {
+    console.printHelp(text_return, args->position_trimmed(0));
+  }
+  else {
+    console.printHelp(text_return);
+  }
+  return 0;
+}
+
+
+int callback_print_history(StringBuilder* text_return, StringBuilder* args) {
+  console.printHistory(text_return);
+  return 0;
+}
+
+
 
 /*******************************************************************************
 * Main function                                                                *
@@ -569,7 +584,7 @@ void app_main() {
   *   construction. The first thing that should be done is to call the preinit
   *   function to setup the defaults of the platform.
   */
-  platform.platformPreInit();
+  platform_init();
 
     // uint8_t sha_256[32] = { 0 };
     // esp_partition_t partition;
@@ -605,18 +620,39 @@ void app_main() {
 
   ESP_ERROR_CHECK(esp_event_loop_init(eth_event_handler, NULL));
 
-  eth_config_t config = DEFAULT_ETHERNET_PHY_CONFIG;
-  /* Set the PHY address in the example configuration */
-  config.phy_addr    = (eth_phy_base_t) CONFIG_PHY_ADDRESS;
-  config.gpio_config = eth_gpio_config_rmii;
-  config.tcpip_input = tcpip_adapter_eth_input;
+  eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
+  phy_config.phy_addr = CONFIG_PHY_ADDRESS;
+  phy_config.reset_gpio_num = CONFIG_EXAMPLE_ETH_PHY_RST_GPIO;
+  phy = esp_eth_phy_new_lan8720(&phy_config);
 
-  ESP_ERROR_CHECK(esp_eth_init(&config));
+  //eth_config_t config = DEFAULT_ETHERNET_PHY_CONFIG;
+  ///* Set the PHY address in the example configuration */
+  //config.phy_addr    = (eth_phy_base_t) CONFIG_PHY_ADDRESS;
+  //config.gpio_config = eth_gpio_config_rmii;
+  //config.tcpip_input = tcpip_adapter_eth_input;
+  //ESP_ERROR_CHECK(esp_eth_init(&config));
   ESP_ERROR_CHECK(esp_eth_enable());
 
-  platform.bootstrap();
 
-  uart1.setParams(&uart1_opts);
+  /* Start the console UART and attach it to the console. */
+  console_uart.readCallback(&console);
+  console.setOutputTarget(&console_uart);
+  console.setTXTerminator(LineTerm::CRLF); // Best setting for "idf.py monitor"
+  console.setRXTerminator(LineTerm::LF);   // Best setting for "idf.py monitor"
+  console.localEcho(true);
+  console.printHelpOnFail(true);
+  console.init();
+
+  console.defineCommand("help",        '?', ParsingConsole::tcodes_str_1, "Prints help to console.", "", 0, callback_help);
+  console.defineCommand("history",     ParsingConsole::tcodes_0, "Print command history.", "", 0, callback_print_history);
+
+  platform.configureConsole(&console);
+
+  spi_bus.init();
+  i2c0.init();
+  gps.init();
+  gps_uart.readCallback(&gps);
+  //gps_uart.init(&uart1_opts);
 
   xTaskCreate(manuvr_task, "_manuvr", 32768, NULL, (tskIDLE_PRIORITY + 2), NULL);
   //xTaskCreate(&ota_task, "ota_task", 8192, NULL, 5, NULL);

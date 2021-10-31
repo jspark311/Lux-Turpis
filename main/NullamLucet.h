@@ -4,7 +4,7 @@
 
 #include <inttypes.h>
 #include <stdint.h>
-#include <Platform/Platform.h>
+#include <AbstractPlatform.h>
 
 #ifndef __NULLAM_LUCET_DRIVER_H__
 #define __NULLAM_LUCET_DRIVER_H__
@@ -22,30 +22,15 @@ class NullamLucetOpts {
 
 
 
-class NullamLucet : public EventReceiver
-  #ifdef MANUVR_CONSOLE_SUPPORT
-    , public ConsoleInterface
-  #endif
-    {
+class NullamLucet {
   public:
     NullamLucet(const NullamLucetOpts* opts);
     ~NullamLucet();
 
-    /* Overrides from EventReceiver */
-    int8_t notify(ManuvrMsg*);
-    int8_t callback_proc(ManuvrMsg*);
     void printDebug(StringBuilder*);
-
-    #ifdef MANUVR_CONSOLE_SUPPORT
-      /* Overrides from ConsoleInterface */
-      uint consoleGetCmds(ConsoleCommand**);
-      inline const char* consoleName() { return "NullamLucet";  };
-      void consoleCmdProc(StringBuilder* input);
-    #endif  //MANUVR_CONSOLE_SUPPORT
 
 
   protected:
-    int8_t attached();
 
 
   private:

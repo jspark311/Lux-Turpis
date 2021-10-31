@@ -12,7 +12,7 @@ git clone https://github.com/jspark311/ManuvrDrivers.git components/ManuvrDriver
 rm -rf components/CppPotpourri
 git clone https://github.com/jspark311/CppPotpourri.git components/CppPotpourri
 
-# Teensyduino and support libraries...
+# Support libraries...
 rm -rf components/ManuvrPlatforms
 git clone https://github.com/jspark311/ManuvrPlatforms.git components/ManuvrPlatforms
 ln -s components/ManuvrPlatforms/ESP32 components/ManuvrPlatform
