@@ -1,4 +1,5 @@
 EESchema Schematic File Version 4
+LIBS:RadioRelay-cache
 EELAYER 26 0
 EELAYER END
 $Descr B 17000 11000
@@ -6,7 +7,7 @@ encoding utf-8
 Sheet 1 1
 Title "WROOM32 Compute PCB"
 Date "2018-12-29"
-Rev "2"
+Rev "3"
 Comp "Manuvr, Inc"
 Comment1 ""
 Comment2 ""
@@ -44,54 +45,40 @@ Wire Wire Line
 Wire Wire Line
 	2800 5150 2950 5150
 Connection ~ 2950 5150
-$Comp
-L IansParts:CAPARRAY_4 CARY1
-U 1 1 623655CA
-P 1850 4950
-F 0 "CARY1" H 1850 4350 60  0000 C CNN
-F 1 "100nF" H 1850 5500 39  0000 C CNN
-F 2 "r2Parts:CapArray_CKCL44" H 1850 4950 60  0001 C CNN
-F 3 "" H 1850 4950 60  0000 C CNN
-F 4 "CKCL44X5R0J104M085AA" H 1850 4950 60  0001 C CNN "Manu_Number"
-F 5 "TDK Corporation" H 1850 4950 60  0001 C CNN "Manu_Name"
-F 6 "445-1838-1-ND" H 1850 4950 60  0001 C CNN "Digikey_Number"
-	1    1850 4950
-	0    -1   1    0   
-$EndComp
-Text Label 2350 5250 0    39   ~ 0
+Text Label 2350 5150 0    39   ~ 0
 GND
-Connection ~ 2000 4650
+Connection ~ 2000 4750
 Wire Wire Line
-	1500 4650 1750 4650
-Connection ~ 1750 4650
+	1500 4750 1750 4750
+Connection ~ 1750 4750
 Wire Wire Line
-	1750 4650 1750 4700
+	1750 4750 1750 4800
 Wire Wire Line
-	2000 4650 2000 4700
+	2000 4750 2000 4800
 Wire Wire Line
-	2250 4650 2250 4700
+	2250 4750 2250 4800
 Wire Wire Line
-	1500 4700 1500 4650
+	1500 4800 1500 4750
 Wire Wire Line
-	2250 5250 2250 5200
-Connection ~ 2000 5250
+	2250 5150 2250 5100
+Connection ~ 2000 5150
 Wire Wire Line
-	2000 5250 2000 5200
-Connection ~ 1750 5250
+	2000 5150 2000 5100
+Connection ~ 1750 5150
 Wire Wire Line
-	1750 5200 1750 5250
+	1750 5100 1750 5150
 Wire Wire Line
-	1500 5250 1500 5200
+	1500 5150 1500 5100
 Wire Wire Line
-	1500 5250 1750 5250
+	1500 5150 1750 5150
 Wire Wire Line
-	2000 4650 2250 4650
+	2000 4750 2250 4750
 Wire Wire Line
-	1750 4650 2000 4650
+	1750 4750 2000 4750
 Wire Wire Line
-	2000 5250 2250 5250
+	2000 5150 2250 5150
 Wire Wire Line
-	1750 5250 2000 5250
+	1750 5150 2000 5150
 $Comp
 L Device:C C1
 U 1 1 6595B5D6
@@ -106,14 +93,14 @@ F 6 "1276-1869-1-ND" V -950 1450 60  0001 C CNN "Digikey_Number"
 	1    1950 4250
 	0    1    1    0   
 $EndComp
-Text Label 2350 4650 0    39   ~ 0
+Text Label 2350 4750 0    39   ~ 0
 3v3
 Wire Wire Line
-	2350 4650 2250 4650
-Connection ~ 2250 4650
+	2350 4750 2250 4750
+Connection ~ 2250 4750
 Wire Wire Line
-	2350 5250 2250 5250
-Connection ~ 2250 5250
+	2350 5150 2250 5150
+Connection ~ 2250 5150
 $Comp
 L HeepBrain-parts:LORA1276 U1
 U 1 1 66596FAA
@@ -259,5 +246,44 @@ F 2 "Connector_PinHeader_2.54mm:PinHeader_2x08_P2.54mm_Vertical" H 4150 3700 50 
 F 3 "~" H 4150 3700 50  0001 C CNN
 	1    4150 3700
 	1    0    0    -1  
+$EndComp
+$Comp
+L max3109:MAX3109 U?
+U 1 1 5E602904
+P 4800 6000
+F 0 "U?" H 4750 6875 50  0000 C CNN
+F 1 "MAX3109" H 4750 6784 50  0000 C CNN
+F 2 "" H 4800 6300 50  0001 C CNN
+F 3 "" H 4800 6300 50  0001 C CNN
+	1    4800 6000
+	1    0    0    -1  
+$EndComp
+Text Label 4050 5850 2    39   ~ 0
+SPI1_CLK
+Text Label 4050 5750 2    39   ~ 0
+SPI1_MISO
+Text Label 4050 5650 2    39   ~ 0
+SPI1_MOSI
+Text Label 3000 6000 0    39   ~ 0
+LORA_DIO0
+Text Label 3000 6100 0    39   ~ 0
+LORA_DIO1
+Text Label 3000 6200 0    39   ~ 0
+LORA_DIO2
+Wire Wire Line
+	4100 5850 4050 5850
+$Comp
+L Device:C C?
+U 1 1 5E604DE7
+P 2250 4950
+F 0 "C?" H 2250 5050 40  0000 L CNN
+F 1 "10uF" H 2256 4865 40  0000 L CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 2288 4800 30  0001 C CNN
+F 3 "~" H 2250 4950 60  0000 C CNN
+F 4 "CL10A106MA8NRNC" V -2150 2300 60  0001 C CNN "Manu_Number"
+F 5 "TDK Corporation" V -2150 2300 60  0001 C CNN "Manu_Name"
+F 6 "1276-1869-1-ND" V -650 2150 60  0001 C CNN "Digikey_Number"
+	1    2250 4950
+	-1   0    0    1   
 $EndComp
 $EndSCHEMATC

@@ -1,5 +1,5 @@
 (sym_lib_table
-  (lib (name ESP32-footprints-Shem-Lib)(type Legacy)(uri ${KIPRJMOD}/ESP32-footprints-Shem-Lib.lib)(options "")(descr ""))
   (lib (name IansParts)(type Legacy)(uri ${KIPRJMOD}/IansParts.lib)(options "")(descr ""))
   (lib (name HeepBrain-parts)(type Legacy)(uri /home/ian/working-copies/RadioRelay/HeepBrain-parts.lib)(options "")(descr ""))
+  (lib (name max3109)(type Legacy)(uri ${KIPRJMOD}/max3109.lib)(options "")(descr ""))
 )
