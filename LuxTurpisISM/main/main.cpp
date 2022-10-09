@@ -1,7 +1,5 @@
-#include <math.h>
-
 /* Local includes */
-#include "Chatterbox.h"
+#include "LuxTurpisISM.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,13 +29,44 @@ extern "C" {
 /*******************************************************************************
 * TODO: Pending mitosis into a header file....
 *******************************************************************************/
-IdentityUUID ident_uuid("Chatterbox", (char*) "2f0891e1-ba39-4779-9e7d-17c771ced179");
-
+IdentityUUID ident_uuid("LuxTurpisISM", (char*) "765a2853-7cd1-4e12-9e84-f28ac1cee27f");
 
 
 /*******************************************************************************
 * Globals
 *******************************************************************************/
+const I2CAdapterOptions i2c0_opts(
+  0,        // Device number
+  SDA_PIN,  // (sda)
+  SCL_PIN,  // (scl)
+  0,        // No pullups. Internals are too weak. They are provided on board.
+  100000
+);
+
+const SX1276Opts sx1276_opts_0(
+  LORA0_RESET_PIN,  // Reset
+  LORA0_CS_PIN,     // CS
+  LORA0_DIO0_PIN,   // D0
+  LORA0_DIO1_PIN,   // D1
+  LORA0_DIO2_PIN,   // D2
+  LORABand::BAND_915
+);
+
+
+const SX1276Opts sx1276_opts_1(
+  LORA1_RESET_PIN,  // Reset
+  LORA1_CS_PIN,     // CS
+  LORA1_DIO0_PIN,   // D0
+  LORA1_DIO1_PIN,   // D1
+  LORA1_DIO2_PIN,   // D2
+  LORABand::BAND_868
+);
+
+/*
+* This UART is connected to the forked GPS TX pin. Another system has direct
+*   control of the GPS (including power), but we can still take data on an
+*   opportunistic basis.
+*/
 UARTOpts uart2_opts {
   .bitrate       = 9600,
   .start_bits    = 0,
@@ -50,26 +79,17 @@ UARTOpts uart2_opts {
   .padding       = 0
 };
 
-M2MLinkOpts link_opts(
-  100,   // ACK timeout is 100ms.
-  2000,  // Send a KA every 2s.
-  2048,  // MTU for this link is 2 kibi.
-  TCode::CBOR,   // Payloads should be CBOR encoded.
-  // This side of the link will send a KA while IDLE, and
-  //   allows remote log write.
-  (M2MLINK_FLAG_SEND_KA | M2MLINK_FLAG_ALLOW_LOG_WRITE)
-);
+static const char* TAG = "main-cpp";
+static const char* console_prompt_str = "LuxTurpisISM # ";
 
-
-static const char* TAG         = "main-cpp";
-const char* console_prompt_str = "Chatterbox # ";
 ParsingConsole console(128);
 ESP32StdIO console_uart;
+UARTAdapter gps_uart(2, UART2_RX_PIN, 255, 255, 255, 128, 128);
+SPIAdapter spi_bus(1, SPI_CLK_PIN, SPI_MOSI_PIN, SPI_MISO_PIN, 8);
+I2CAdapter i2c0(&i2c0_opts);
+GPSWrapper gps;
 
-UARTAdapter movi_uart(2, UART2_RX_PIN, UART2_TX_PIN, 255, 255, 256, 256);
-MOVI movi(&movi_uart);
-
-M2MLink* mlink_local = nullptr;
+//TMP102 temperature_sensor;    // Optional temperature monitoring.
 
 /* Profiling data */
 StopWatch stopwatch_main_loop_time;
@@ -77,90 +97,16 @@ StopWatch stopwatch_main_loop_time;
 /* Cheeseball async support stuff. */
 uint32_t boot_time         = 0;      // millis() at boot.
 uint32_t config_time       = 0;      // millis() at end of setup().
-uint32_t last_interaction  = 0;      // millis() when the user last interacted.
-uint32_t ping_req_time     = 0;
-uint32_t ping_nonce        = 0;
 
 
 /*******************************************************************************
 * Process functions called from the main service loop.
 *******************************************************************************/
 
-int8_t report_fault_condition(int8_t fault) {
-  int8_t ret = 0;
-  c3p_log(LOG_LEV_CRIT, TAG, "Chatterbox fault: %d\n", ret);
-  return ret;
-}
-
-
 
 /*******************************************************************************
 * Link callbacks
 *******************************************************************************/
-void link_callback_state(M2MLink* cb_link) {
-  StringBuilder log;
-  c3p_log(LOG_LEV_NOTICE, TAG, "Link (0x%x) entered state %s\n", cb_link->linkTag(), M2MLink::sessionStateStr(cb_link->getState()));
-}
-
-
-void link_callback_message(uint32_t tag, M2MMsg* msg) {
-  StringBuilder log;
-  KeyValuePair* kvps_rxd = nullptr;
-  bool dump_msg_debug = true;
-  log.concatf("link_callback_message(Tag = 0x%08x, ID = %u):\n", tag, msg->uniqueId());
-  msg->getPayload(&kvps_rxd);
-  if (kvps_rxd) {
-    char* fxn_name = nullptr;
-    if (0 == kvps_rxd->valueWithKey("fxn", &fxn_name)) {
-      if (0 == strcmp("PING", fxn_name)) {
-        //dump_msg_debug = false;
-        // Counterparty may have replied to our ping. If not, reply logic will
-        //   handle the response.
-        if (ping_nonce) {
-          if (ping_nonce == msg->uniqueId()) {
-            log.concatf("\tPing returned in %ums.\n", wrap_accounted_delta((uint32_t) micros(), ping_req_time));
-            ping_req_time = 0;
-            ping_nonce    = 0;
-          }
-        }
-      }
-      else if (0 == strcmp("IMG_CAST", fxn_name)) {
-        // Counterparty is sending us an image.
-        //dump_msg_debug = false;
-      }
-      else if (0 == strcmp("WHO", fxn_name)) {
-        // Counterparty wants to know who we are.
-        log.concatf("\tTODO: Unimplemented fxn: \n", fxn_name);
-      }
-      else {
-        log.concatf("\tUnhandled fxn: \n", fxn_name);
-      }
-    }
-    else {
-      log.concat("\tRX'd message with no specified fxn.\n");
-    }
-  }
-  else {
-    if (msg->isReply()) {
-      log.concatf("\tRX'd ACK for msg %u.\n", msg->uniqueId());
-      dump_msg_debug = false;
-    }
-    else {
-      log.concat("\tRX'd message with no payload.\n");
-    }
-  }
-
-  if (dump_msg_debug) {
-    log.concat('\n');
-    msg->printDebug(&log);
-  }
-
-  if (msg->expectsReply()) {
-    int8_t ack_ret = msg->ack();
-    log.concatf("\n\tACK'ing %u returns %d.\n", msg->uniqueId(), ack_ret);
-  }
-  c3p_log(LOG_LEV_INFO, __PRETTY_FUNCTION__, &log);
-}
 
 
 /*******************************************************************************
@@ -181,38 +127,6 @@ int callback_console_tools(StringBuilder* txt_ret, StringBuilder* args) {
 int console_callback_movi(StringBuilder* txt_ret, StringBuilder* args) {
   return movi.console_handler(txt_ret, args);
 }
-
-
-/*
-* TODO: Locally pre-empted console handler to facilitate `ping`, which is no
-*   longer required. Reduce into a shunt.
-*/
-int callback_link_tools(StringBuilder* text_return, StringBuilder* args) {
-  int ret = -1;
-  if (mlink_local) {
-    char* cmd = args->position_trimmed(0);
-    // We interdict if the command is something specific to this application.
-    if (0 == StringBuilder::strcasecmp(cmd, "ping")) {
-      // Send a description request message.
-      ping_req_time = (uint32_t) millis();
-      ping_nonce = randomUInt32();
-      KeyValuePair* a = new KeyValuePair("PING",  "fxn");
-      a->append(ping_req_time, "time_ms");
-      a->append(ping_nonce,    "rand");
-      int8_t ret_local = mlink_local->send(a, true);
-      text_return->concatf("Ping send() returns ID %u\n", ret_local);
-      ret = 0;
-    }
-    else ret = mlink_local->console_handler(text_return, args);
-
-  }
-  else {
-    text_return->concat("mlink_local is not allocated.\n");
-  }
-
-  return ret;
-}
-
 
 /**
 * @page console-handlers
@@ -373,25 +287,15 @@ static void wifi_scan() {
 */
 void manuvr_task(void* pvParameter) {
   while (1) {
-    bool should_sleep = true;
     uint32_t millis_now = millis();
-
-    if (0 < console_uart.poll()) {
+    bool should_sleep = true;
+    while (0 < spi_bus.service_callback_queue()) {
       should_sleep = false;
     }
-    if (0 < movi_uart.poll()) {
-      should_sleep = false;
-    }
-    movi.poll();
+    should_sleep = (0 < console_uart.poll());
+    should_sleep = (0 < gps_uart.poll());
 
-    if (mlink_local) {
-      StringBuilder link_log;
-      mlink_local->poll(&link_log);
-      if (!link_log.isEmpty()) {
-        c3p_log(LOG_LEV_INFO, TAG, &link_log);
-      }
-    }
-
+    if (should_sleep) {}
     platform.yieldThread();
   }
 }
@@ -413,12 +317,9 @@ void app_main() {
   platform_init();
   boot_time = millis();
 
-  // The unit has a bi-color LED with a common anode.
-  // Start with the LED off.
-  pinMode(LED_R_PIN,  GPIOMode::ANALOG_OUT);
-  pinMode(LED_G_PIN,  GPIOMode::ANALOG_OUT);
-  analogWrite(LED_G_PIN, 1.0);
-  analogWrite(LED_R_PIN, 1.0);
+  StringBuilder ptc("LuxTurpisISM ");
+  ptc.concat(TEST_PROG_VERSION);
+  ptc.concat("\t Build date " __DATE__ " " __TIME__ "\n");
 
   /* Start the console UART and attach it to the console. */
   console_uart.readCallback(&console);    // Attach the UART to console...
@@ -429,28 +330,19 @@ void app_main() {
   console.emitPrompt(true);
   console.localEcho(true);
   console.printHelpOnFail(true);
+  console.init();
 
   console.defineCommand("help",        '?',  "Prints help to console.", "[<specific command>]", 0, callback_help);
   console.defineCommand("console",     '\0', "Console conf.", "[echo|prompt|force|rxterm|txterm]", 0, callback_console_tools);
   platform.configureConsole(&console);
-  console.defineCommand("link",        'l',  "Linked device tools.", "", 0, callback_link_tools);
   console.defineCommand("str",         '\0', "Storage tools", "", 0, console_callback_esp_storage);
-  console.defineCommand("movi",        'm',  "MOVI tools", "", 0, console_callback_movi);
   console.defineCommand("uart",        'u',  "UART tools", "<adapter> [init|deinit|reset|poll]", 0, callback_uart_tools);
 
-  console.init();
-
-  StringBuilder ptc("Chatterbox ");
-  ptc.concat(TEST_PROG_VERSION);
-  ptc.concat("\t Build date " __DATE__ " " __TIME__ "\n");
-
-  int ret = movi_uart.init(&uart2_opts);
-  ptc.concatf("MOVI UART init() returns %d\n", ret);
-  // The MOVI driver doesn't require a call to an init() function. It has an
-  //   internal finite state machine that is smart enough to do things for
-  //   itself, if given a working UART reference and regular polling.
-  // It does, however, require us to setup callbacks to get most out of it.
-  // TODO: That^^
+  spi_bus.init();
+  i2c0.init();
+  ptc.concatf("gps.init()        \t  %d\n", gps.init());
+  gps_uart.readCallback(&gps);
+  ptc.concatf("gps_uart.init()   \t %d\n", gps_uart.init(&uart2_opts));
 
   // Write our boot log to the UART.
   console.printToLog(&ptc);
