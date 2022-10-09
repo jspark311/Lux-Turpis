@@ -12,7 +12,7 @@
 #include <GPSWrapper.h>
 
 /* Local includes */
-#include "NullamLucet.h"
+#include "LuxTurpis.h"
 
 
 #ifdef __cplusplus
@@ -162,7 +162,7 @@ SPIAdapter spi_bus(1, SPI_CLK_PIN, SPI_MOSI_PIN, SPI_MISO_PIN, 8);
 I2CAdapter i2c0(&i2c0_opts);
 GPSWrapper gps;
 
-NullamLucetOpts relay_opts {};
+LuxTurpisOpts relay_opts {};
 
 esp_eth_phy_t* phy = nullptr;
 
@@ -221,42 +221,42 @@ static int proc_mqtt_payload(const char* topic, uint8_t* buf, unsigned int len) 
   const char* tok1 = (const char*) topic;
   if (0 == StringBuilder::strcasestr(tok1, "/RadioRelay/ble-ping")) {
     int num_val = atoi((const char*) buf);
-    //ManuvrMsg* event = Kernel::returnEvent(MANUVR_MSG_DIMMER_SET_LEVEL);
+    //M2MMsg* event = Kernel::returnEvent(MANUVR_MSG_DIMMER_SET_LEVEL);
     //event->addArg((uint8_t) 5);
     //event->addArg((uint8_t) num_val);
     //Kernel::staticRaiseEvent(event);
   }
   else if (0 == StringBuilder::strcasestr(tok1, "/RadioRelay/ble-command")) {
     int num_val = atoi((const char*) buf);
-    //ManuvrMsg* event = Kernel::returnEvent(MANUVR_MSG_DIMMER_SET_LEVEL);
+    //M2MMsg* event = Kernel::returnEvent(MANUVR_MSG_DIMMER_SET_LEVEL);
     //event->addArg((uint8_t) 2);
     //event->addArg((uint8_t) num_val);
     //Kernel::staticRaiseEvent(event);
   }
   else if (0 == StringBuilder::strcasestr(tok1, "/RadioRelay/lora-message")) {
     int num_val = atoi((const char*) buf);
-    //ManuvrMsg* event = Kernel::returnEvent(MANUVR_MSG_DIMMER_SET_LEVEL);
+    //M2MMsg* event = Kernel::returnEvent(MANUVR_MSG_DIMMER_SET_LEVEL);
     //event->addArg((uint8_t) 4);
     //event->addArg((uint8_t) num_val);
     //Kernel::staticRaiseEvent(event);
   }
   else if (0 == StringBuilder::strcasestr(tok1, "/RadioRelay/lora-command")) {
     int num_val = atoi((const char*) buf);
-    //ManuvrMsg* event = Kernel::returnEvent(MANUVR_MSG_DIMMER_SET_LEVEL);
+    //M2MMsg* event = Kernel::returnEvent(MANUVR_MSG_DIMMER_SET_LEVEL);
     //event->addArg((uint8_t) 3);
     //event->addArg((uint8_t) num_val);
     //Kernel::staticRaiseEvent(event);
   }
   else if (0 == StringBuilder::strcasestr(tok1, "/RadioRelay/conf")) {
     int num_val = atoi((const char*) buf);
-    //ManuvrMsg* event = Kernel::returnEvent(MANUVR_MSG_DIMMER_SET_LEVEL);
+    //M2MMsg* event = Kernel::returnEvent(MANUVR_MSG_DIMMER_SET_LEVEL);
     //event->addArg((uint8_t) 1);
     //event->addArg((uint8_t) num_val);
     //Kernel::staticRaiseEvent(event);
   }
   else if (0 == StringBuilder::strcasestr(tok1, "/RadioRelay/ota-update")) {
     int num_val = atoi((const char*) buf);
-    //ManuvrMsg* event = Kernel::returnEvent(MANUVR_MSG_DIMMER_SET_LEVEL);
+    //M2MMsg* event = Kernel::returnEvent(MANUVR_MSG_DIMMER_SET_LEVEL);
     //event->addArg((uint8_t) 2);
     //event->addArg((uint8_t) num_val);
     //Kernel::staticRaiseEvent(event);
@@ -371,7 +371,7 @@ void mqtt_send_temperature() {
 void manuvr_task(void* pvParameter) {
   SX1276 lora(&sx1276_opts);
   SX1503 sx1503(13, 255);
-  NullamLucet nl(&relay_opts);
+  LuxTurpis nl(&relay_opts);
 
   tmp102 = new TMP102(0x49);
 

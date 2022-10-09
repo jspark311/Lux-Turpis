@@ -12,20 +12,20 @@
 /*
 * Options object
 */
-class NullamLucetOpts {
+class LuxTurpisOpts {
   public:
-    NullamLucetOpts() {};
-    NullamLucetOpts(const NullamLucetOpts* o) {};
+    LuxTurpisOpts() {};
+    LuxTurpisOpts(const LuxTurpisOpts* o) {};
 
   private:
 };
 
 
 
-class NullamLucet {
+class LuxTurpis {
   public:
-    NullamLucet(const NullamLucetOpts* opts);
-    ~NullamLucet();
+    LuxTurpis(const LuxTurpisOpts* opts);
+    ~LuxTurpis();
 
     void printDebug(StringBuilder*);
 
@@ -34,7 +34,7 @@ class NullamLucet {
 
 
   private:
-    const NullamLucetOpts _opts;
+    const LuxTurpisOpts _opts;
 };
 
 

@@ -1,4 +1,4 @@
-#include "NullamLucet.h"
+#include "LuxTurpis.h"
 
 
 /*******************************************************************************
@@ -13,14 +13,14 @@
 /*
 * Constructor.
 */
-NullamLucet::NullamLucet(const NullamLucetOpts* o) : _opts(o) {
+LuxTurpis::LuxTurpis(const LuxTurpisOpts* o) : _opts(o) {
 }
 
 
 /*
 * Destructor.
 */
-NullamLucet::~NullamLucet() {
+LuxTurpis::~LuxTurpis() {
 }
 
 
@@ -28,6 +28,6 @@ NullamLucet::~NullamLucet() {
 /*
 * Dump this item to the dev log.
 */
-void NullamLucet::printDebug(StringBuilder* output) {
-  output->concat("\n==< NullamLucet >======================\n");
+void LuxTurpis::printDebug(StringBuilder* output) {
+  output->concat("\n==< LuxTurpis >======================\n");
 }

@@ -1,6 +1,9 @@
-# Nullam-Lucet
+# Lux Turpis ("Light Mixer")
 
-Nullam Lucet is an ISM radio relay built on top of the <a href="https://github.com/OLIMEX/ESP32-GATEWAY">Olimex ESP32 Gateway board</a>.
+Lux Turpis is an ISM radio relay. The hardware is a one-off multi-platform system
+that is mounted to an antenna mast. You can try to replicate it if you like, but
+it is being posted more as a demonstration and documentation piece, rather than as
+a usable body of code and hardware plans.
 
 ----------------------
 #### What is in this repository:
@@ -14,7 +17,7 @@ Nullam Lucet is an ISM radio relay built on top of the <a href="https://github.c
 ----------------------
 #### Write-up
 
-[Pictures and more info](https://hackaday.io/project/167063-nullam-lucet)
+[Pictures and more info](https://hackaday.io/project/167063-lux-turpis)
 
 ----------------------
 #### License

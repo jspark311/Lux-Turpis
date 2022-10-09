@@ -2,4 +2,5 @@
   (lib (name IansParts)(type Legacy)(uri ${KIPRJMOD}/IansParts.lib)(options "")(descr ""))
   (lib (name HeepBrain-parts)(type Legacy)(uri /home/ian/working-copies/RadioRelay/HeepBrain-parts.lib)(options "")(descr ""))
   (lib (name max3109)(type Legacy)(uri ${KIPRJMOD}/max3109.lib)(options "")(descr ""))
+  (lib (name RadioRelay-rescue)(type Legacy)(uri ${KIPRJMOD}/RadioRelay-rescue.lib)(options "")(descr ""))
 )
