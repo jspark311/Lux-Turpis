@@ -43,7 +43,7 @@ const I2CAdapterOptions i2c0_opts(
   100000
 );
 
-const SX1276Opts sx1276_opts_0(
+const SX127xOpts sx127x_opts_0(
   LORA0_RESET_PIN,  // Reset
   LORA0_CS_PIN,     // CS
   LORA0_DIO0_PIN,   // D0
@@ -53,7 +53,7 @@ const SX1276Opts sx1276_opts_0(
 );
 
 
-const SX1276Opts sx1276_opts_1(
+const SX127xOpts sx127x_opts_1(
   LORA1_RESET_PIN,  // Reset
   LORA1_CS_PIN,     // CS
   LORA1_DIO0_PIN,   // D0
@@ -61,6 +61,10 @@ const SX1276Opts sx1276_opts_1(
   LORA1_DIO2_PIN,   // D2
   LORABand::BAND_868
 );
+
+SX127x lora_0(&sx127x_opts_0);
+SX127x lora_1(&sx127x_opts_1);
+
 
 /*
 * This UART is connected to the forked GPS TX pin. Another system has direct
@@ -121,11 +125,6 @@ int callback_help(StringBuilder* txt_ret, StringBuilder* args) {
 /* Direct console shunt */
 int callback_console_tools(StringBuilder* txt_ret, StringBuilder* args) {
   return console.console_handler_conf(txt_ret, args);
-}
-
-/* Direct console shunt */
-int console_callback_movi(StringBuilder* txt_ret, StringBuilder* args) {
-  return movi.console_handler(txt_ret, args);
 }
 
 /**
@@ -340,9 +339,12 @@ void app_main() {
 
   spi_bus.init();
   i2c0.init();
-  ptc.concatf("gps.init()        \t  %d\n", gps.init());
+  ptc.concatf("gps.init()      \t %d\n", gps.init());
   gps_uart.readCallback(&gps);
-  ptc.concatf("gps_uart.init()   \t %d\n", gps_uart.init(&uart2_opts));
+  ptc.concatf("gps_uart.init() \t %d\n", gps_uart.init(&uart2_opts));
+  ptc.concatf("lora_0.init()   \t %d\n", lora_0.init(&spi_bus));
+  ptc.concatf("lora_1.init()   \t %d\n", lora_1.init(&spi_bus));
+
 
   // Write our boot log to the UART.
   console.printToLog(&ptc);
