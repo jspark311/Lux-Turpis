@@ -202,6 +202,27 @@ int callback_uart_tools(StringBuilder* text_return, StringBuilder* args) {
 }
 
 
+int callback_lora_tools(StringBuilder* text_return, StringBuilder* args) {
+  int8_t ret = 0;
+  bool print_uarts = true;
+  if (0 < args->count()) {
+    int dev_num = args->position_as_int(0);
+    SX127x* dev = &lora_1;
+    switch (dev_num) {
+      case 0:  dev = &lora_0;
+      case 1:
+        text_return->concatf("lora_%u: ", dev_num, dev->console_handler(text_return, args));
+        break;
+      default:
+        text_return->concat("Unknown LORA module.\n");
+        break;
+    }
+  }
+  return ret;
+}
+
+
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -336,6 +357,7 @@ void app_main() {
   platform.configureConsole(&console);
   console.defineCommand("str",         '\0', "Storage tools", "", 0, console_callback_esp_storage);
   console.defineCommand("uart",        'u',  "UART tools", "<adapter> [init|deinit|reset|poll]", 0, callback_uart_tools);
+  console.defineCommand("lora",        'l',  "LORA tools", "<adapter> [init|deinit|reset|poll]", 0, callback_lora_tools);
 
   spi_bus.init();
   i2c0.init();
@@ -344,7 +366,6 @@ void app_main() {
   ptc.concatf("gps_uart.init() \t %d\n", gps_uart.init(&uart2_opts));
   ptc.concatf("lora_0.init()   \t %d\n", lora_0.init(&spi_bus));
   ptc.concatf("lora_1.init()   \t %d\n", lora_1.init(&spi_bus));
-
 
   // Write our boot log to the UART.
   console.printToLog(&ptc);
